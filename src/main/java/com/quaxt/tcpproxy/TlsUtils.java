@@ -33,7 +33,8 @@ public class TlsUtils {
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
             kmf.init(keyStore, keyStorePassword);
             SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());            return sslContext;
+            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+            return sslContext;
         } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException
                  | KeyManagementException ex) {
             throw new RuntimeException(ex);
