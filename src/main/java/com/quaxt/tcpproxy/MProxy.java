@@ -89,11 +89,7 @@ content
             OutputStream out = outSocket.getOutputStream();
             WritableByteChannel outChannel = Channels.newChannel(out);
             byte[] packet = readPacket(in);
-            //debugBytes(packet, inLeg.toString());
             outChannel.write(ByteBuffer.wrap(packet));
-            /** TODO convert sockets to SSL not sure when to
-                do this. Also, see TODO in convertSocketToSsl method body
-            */
         } catch (IOException ex) {
             ex.printStackTrace();
         }

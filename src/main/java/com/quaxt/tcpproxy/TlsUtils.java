@@ -10,7 +10,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.KeyManagerFactory;
 
 public class TlsUtils {
-    // "PKCS12"
+
     public static KeyStore loadKeyStore(String keyStoreUrl, String type, char[] pass) {
         URI uri = URI.create(keyStoreUrl);
         Path keyStorePath = Paths.get(uri);
