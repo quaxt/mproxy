@@ -115,6 +115,7 @@ content
                               String remoteServerName,
                               SocketAddress remoteAddress,
                               SSLContext sslContextToServer,
+                              SSLContext sslContextToClient,
                               boolean clientAuthenticationToServer,
                               boolean clientAuthenticationToProxy) {
         try {
@@ -122,8 +123,8 @@ content
             server.connect(remoteAddress);
             startTransfer(server, client);
             startTransfer(client, server);
-            client = convertSocketToSsl(client, sslContext);
-            server = convertSocketToSsl(server, sslContext);
+            client = convertSocketToSsl(client, sslContextToClient);
+            server = convertSocketToSsl(server, sslContextToServer);
             System.out.println("clientAuthenticationToServer=" + clientAuthenticationToServer);
             setSSLParameters((SSLSocket)server, clientAuthenticationToServer, remoteServerName);
             setSSLParameters((SSLSocket)client, clientAuthenticationToProxy, null);
@@ -136,12 +137,12 @@ content
         }
     }
 
-    public static SSLContext createSSLContext (Properties p) {
+    public static SSLContext createSSLContext (Properties p, boolean useTrustStore, boolean useKeyStore) {
         String trustStoreUrl =
             p.getProperty("trustStoreUrl");
         KeyStore trustStore = null;
         char[] trustStorePassword;
-        if (trustStoreUrl != null) {
+        if (useTrustStore && trustStoreUrl != null) {
             trustStorePassword = p.getProperty("trustStorePassword").toCharArray();
             String trustStoreType = p.getProperty("trustStoreType");
             trustStore = TlsUtils.loadKeyStore(trustStoreUrl,
@@ -152,7 +153,7 @@ content
             p.getProperty("keyStoreUrl");
         KeyStore keyStore = null;
         char[] keyStorePassword = null;
-        if (keyStoreUrl != null) {
+        if (useKeyStore && keyStoreUrl != null) {
             keyStorePassword = p.getProperty("keyStorePassword").toCharArray();
             String keyStoreType = p.getProperty("keyStoreType");
             keyStore = TlsUtils.loadKeyStore(keyStoreUrl,
@@ -167,7 +168,8 @@ content
     public void listen(SocketAddress localAddress,
                        String remoteHost,
                        SocketAddress remoteAddress,
-                       SSLContext sslContext,
+                       SSLContext sslContextToServer,
+                       SSLContext sslContextToClient,
                        boolean clientAuthenticationToServer,
                        boolean clientAuthenticationToProxy) {
         System.out.println("localAddress = " + localAddress);
@@ -178,7 +180,7 @@ content
             while (true) {
                 Socket socket = serverSocket.accept();
                 System.out.println("connect");
-                handleConnect(socket, remoteHost, remoteAddress, sslContext,
+                handleConnect(socket, remoteHost, remoteAddress, sslContextToServer, sslContextToClient,
                               clientAuthenticationToServer, clientAuthenticationToProxy);
             }
         } catch (Exception e) {
@@ -202,7 +204,8 @@ content
     }
 
     public void launch(Properties p) {
-        SSLContext sslContext = createSSLContext(p);
+        SSLContext sslContextToServer = createSSLContext(p, true, false);
+        SSLContext sslContextToClient = createSSLContext(p, true, true);
         String remoteHost = p.getProperty("remoteHost");
         int remotePort = Integer.parseInt(p.getProperty("remotePort"));
         int port = Integer.parseInt(p.getProperty("port"));
@@ -211,7 +214,7 @@ content
         SocketAddress remoteAddress =
             new InetSocketAddress(remoteHost, remotePort);
         SocketAddress localAddress = new InetSocketAddress(port);
-        listen(localAddress, remoteHost, remoteAddress, sslContext,
+        listen(localAddress, remoteHost, remoteAddress, sslContextToServer, sslContextToClient,
                clientAuthenticationToServer, clientAuthenticationToProxy);
     }
 
