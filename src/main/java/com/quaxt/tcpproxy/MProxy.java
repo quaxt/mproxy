@@ -102,15 +102,19 @@ content
     }
 
 
-    public void setSSLParameters(SSLSocket sslSocket, boolean requireClientAuth) {
+    public void setSSLParameters(SSLSocket sslSocket, boolean requireClientAuth, String serverName) {
          SSLParameters p = sslSocket.getSSLParameters();
          p.setNeedClientAuth(requireClientAuth);
+         if (serverName != null) {
+             p.setServerNames(Arrays.asList(new SNIHostName(serverName)));
+         }
          sslSocket.setSSLParameters(p);
     }
 
     public void handleConnect(Socket client,
+                              String remoteServerName,
                               SocketAddress remoteAddress,
-                              SSLContext sslContext,
+                              SSLContext sslContextToServer,
                               boolean clientAuthenticationToServer,
                               boolean clientAuthenticationToProxy) {
         try {
@@ -120,8 +124,9 @@ content
             startTransfer(client, server);
             client = convertSocketToSsl(client, sslContext);
             server = convertSocketToSsl(server, sslContext);
-            setSSLParameters((SSLSocket)server, clientAuthenticationToServer);
-            setSSLParameters((SSLSocket)client, clientAuthenticationToProxy);
+            System.out.println("clientAuthenticationToServer=" + clientAuthenticationToServer);
+            setSSLParameters((SSLSocket)server, clientAuthenticationToServer, remoteServerName);
+            setSSLParameters((SSLSocket)client, clientAuthenticationToProxy, null);
             ((SSLSocket)server).startHandshake();
             ((SSLSocket)client).setUseClientMode(false);
             transferBytes(client, server);
@@ -160,6 +165,7 @@ content
     }
 
     public void listen(SocketAddress localAddress,
+                       String remoteHost,
                        SocketAddress remoteAddress,
                        SSLContext sslContext,
                        boolean clientAuthenticationToServer,
@@ -172,7 +178,7 @@ content
             while (true) {
                 Socket socket = serverSocket.accept();
                 System.out.println("connect");
-                handleConnect(socket, remoteAddress, sslContext,
+                handleConnect(socket, remoteHost, remoteAddress, sslContext,
                               clientAuthenticationToServer, clientAuthenticationToProxy);
             }
         } catch (Exception e) {
@@ -205,7 +211,7 @@ content
         SocketAddress remoteAddress =
             new InetSocketAddress(remoteHost, remotePort);
         SocketAddress localAddress = new InetSocketAddress(port);
-        listen(localAddress, remoteAddress, sslContext,
+        listen(localAddress, remoteHost, remoteAddress, sslContext,
                clientAuthenticationToServer, clientAuthenticationToProxy);
     }
 
